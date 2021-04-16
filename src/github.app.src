@@ -1,0 +1,11 @@
+{application, github,
+ [{description, "A simple library application."},
+  {vsn, "git"},
+  {registered, []},
+  {mod, {github_app, []}},
+  {applications,
+   [kernel,
+    stdlib,
+    et]},
+  {env, []},
+  {modules, []}]}.
