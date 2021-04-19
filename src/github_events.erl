@@ -1,6 +1,6 @@
 -module(github_events).
 
--export([list_public_events/1,
+-export([list_public_events/0,
          validate/1, generate/1]).
 
 -export_type([actor/0, event/0, event/1, repo/0]).
@@ -30,30 +30,16 @@
           name := string(),
           url := string()}.
 
--type event_options() ::
-        #{per_page => non_neg_integer(),
-          page => pos_integer()}.
-
 -type event_response() ::
         #{events := [event()],
           poll_interval := non_neg_integer(), % seconds
           etag := binary()}.
 
--spec list_public_events(event_options()) -> github:result(event_response()).
-list_public_events(EventOptions) ->
+-spec list_public_events() -> github:result(event_response()).
+list_public_events() ->
   RequestOptions = #{response_body => {jsv, {ref, github, events}}},
-  Target = #{path => <<"/events">>,
-             query => event_query(EventOptions)},
+  Target = <<"/events">>,
   github_http:send_request(get, Target, RequestOptions).
-
--spec event_query(event_options()) -> uri:query().
-event_query(EventOptions) ->
-  maps:fold(fun
-              (per_page, N, Acc) ->
-                [{<<"per_page">>, integer_to_binary(N)} | Acc];
-              (page, N, Acc) ->
-                [{<<"page">>, integer_to_binary(N)} | Acc]
-            end, [], EventOptions).
 
 -spec validate(map()) -> jsv:validation_result(event()).
 validate(Event = #{type := Type, payload := Payload}) ->
