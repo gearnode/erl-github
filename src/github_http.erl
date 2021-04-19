@@ -73,10 +73,9 @@ set_request_target(Request, Options) ->
 
 -spec set_request_auth(mhttp:request(), options()) -> mhttp:request().
 set_request_auth(Request, #{authentication := {personal, User, Token}}) ->
-  Credentials = <<User/binary, $:, Token/binary>>,
-  Value = iolist_to_binary([<<"Basic ">>, base64:encode(Credentials)]),
   Header = mhttp_request:header(Request),
-  Request#{header => mhttp_header:add(Header, <<"Authorization">>, Value)};
+  Header2 = mhttp_header:add_basic_authorization(Header, User, Token),
+  Request#{header => Header2};
 set_request_auth(Request, _Options) ->
   Request.
 
