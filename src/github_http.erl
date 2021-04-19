@@ -150,6 +150,7 @@ decode_response_body(Body, {jsv, Definition}) ->
   case decode_response_body(Body, json) of
     {ok, Value} ->
       Options = #{unknown_member_handling => remove,
+                  null_member_handling => remove,
                   format_value_errors => true},
       case jsv:validate(Value, Definition, Options) of
         {ok, Term} ->
