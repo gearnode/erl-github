@@ -2,6 +2,7 @@
  [{description, "A client for the GitHub API."},
   {vsn, "git"},
   {registered, []},
+  {mod, {github_app, []}},
   {applications,
    [kernel,
     stdlib,

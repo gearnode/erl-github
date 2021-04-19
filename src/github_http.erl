@@ -27,14 +27,21 @@
 
 -type response_body() :: binary() | json:value() | term().
 
--spec send_request(mhttp:method(), uri:path()) -> github:result(response()).
-send_request(Method, Path) ->
-  send_request(Method, Path, #{}).
-
--spec send_request(mhttp:method(), uri:path(), options()) ->
+-spec send_request(mhttp:method(), uri:uri() | uri:path()) ->
         github:result(response()).
-send_request(Method, Path, Options) ->
-  Request0 = #{method => Method, target => Path},
+send_request(Method, TargetOrPath) ->
+  send_request(Method, TargetOrPath, #{}).
+
+-spec send_request(mhttp:method(), uri:uri() | uri:path(), options()) ->
+        github:result(response()).
+send_request(Method, TargetOrPath, Options) ->
+  Target = case TargetOrPath of
+             Path when is_binary(Path) ->
+               #{path => Path};
+             URI when is_map(URI) ->
+               URI
+           end,
+  Request0 = #{method => Method, target => Target},
   Request = finalize_request(Request0, Options),
   PoolId = maps:get(mhttp_pool, Options, default),
   case mhttp:send_request(Request, #{pool => PoolId}) of
@@ -140,12 +147,16 @@ decode_response_body(Body, json) ->
       {error, {invalid_response_body, {json, Error, Body}}}
   end;
 decode_response_body(Body, {jsv, Definition}) ->
-  Value = decode_response_body(Body, json),
-  Options = #{unknown_member_handling => remove,
-              format_value_errors => true},
-  case jsv:validate(Value, Definition, Options) of
-    {ok, Term} ->
-      {ok, Term};
-    {error, Errors} ->
-      {error, {invalid_response_body, {jsv, Errors, Value}}}
+  case decode_response_body(Body, json) of
+    {ok, Value} ->
+      Options = #{unknown_member_handling => remove,
+                  format_value_errors => true},
+      case jsv:validate(Value, Definition, Options) of
+        {ok, Term} ->
+          {ok, Term};
+        {error, Errors} ->
+          {error, {invalid_response_body, {jsv, Errors, Value}}}
+      end;
+    {error, Reason} ->
+      {error, Reason}
   end.
