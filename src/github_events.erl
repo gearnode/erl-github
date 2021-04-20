@@ -1,6 +1,6 @@
 -module(github_events).
 
--export([list_public_events/0,
+-export([list_public_events/1,
          validate/1, generate/1]).
 
 -export_type([actor/0, event/0, event/1, repo/0]).
@@ -35,10 +35,18 @@
           poll_interval := non_neg_integer(), % seconds
           etag := binary()}.
 
--spec list_public_events() -> github:result(event_response()).
-list_public_events() ->
-  RequestOptions = #{response_body => {jsv, {ref, github, events}}},
-  Target = <<"/events">>,
+-type event_options() ::
+        #{per_page => pos_integer(),
+          if_none_match => binary()}.
+
+-spec list_public_events(event_options()) -> github:result(event_response()).
+list_public_events(Options) ->
+  PerPage = maps:get(per_page, Options, 10),
+  Target = #{path => <<"/events">>,
+             query => [{<<"per_page">>, integer_to_binary(PerPage)}]},
+  RequestOptions =
+    maps:merge(maps:with([if_none_match], Options),
+               #{response_body => {jsv, {ref, github, events}}}),
   github_http:send_request(get, Target, RequestOptions).
 
 -spec validate(map()) -> jsv:validation_result(event()).

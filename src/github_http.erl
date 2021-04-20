@@ -10,6 +10,7 @@
           endpoint => binary() | uri:uri(),
           authentication => github:authentication(),
           user_agent => binary(),
+          if_none_match => binary(),
           request_body => request_body_spec(),
           response_body => response_body_spec()}.
 
@@ -64,6 +65,7 @@ send_request(Method, TargetOrPath, Options) ->
 finalize_request(Request, Options) ->
   Funs = [fun set_request_target/2,
           fun set_request_auth/2,
+          fun set_request_if_none_match/2,
           fun set_request_user_agent/2,
           fun set_request_header/2,
           fun set_request_body/2],
@@ -84,6 +86,15 @@ set_request_auth(Request, #{authentication := {personal, User, Token}}) ->
   Header2 = mhttp_header:add_basic_authorization(Header, User, Token),
   Request#{header => Header2};
 set_request_auth(Request, _Options) ->
+  Request.
+
+-spec set_request_if_none_match(mhttp:request(), options()) ->
+        mhttp:request().
+set_request_if_none_match(Request, #{if_none_match := Value}) ->
+  Header = mhttp_request:header(Request),
+  Header2 = mhttp_header:add(Header, <<"If-None-Match">>, Value),
+  Request#{header => Header2};
+set_request_if_none_match(Request, _) ->
   Request.
 
 -spec set_request_user_agent(mhttp:request(), options()) -> mhttp:request().
