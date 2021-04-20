@@ -26,7 +26,7 @@
 
 -type response() :: {mhttp:status(), mhttp:header(), response_body()}.
 
--type response_body() :: binary() | json:value() | term().
+-type response_body() :: none | binary() | json:value() | term().
 
 -spec send_request(mhttp:method(), uri:uri() | uri:path()) ->
         github:result(response()).
@@ -148,6 +148,8 @@ encode_request_body({jsv, Term, Definition}) ->
 
 -spec decode_response_body(binary(), response_body_spec()) ->
         github:result(response_body()).
+decode_response_body(<<>>, _) ->
+  {ok, none};
 decode_response_body(Body, data) ->
   {ok, Body};
 decode_response_body(Body, json) ->
