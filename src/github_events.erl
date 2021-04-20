@@ -1,6 +1,6 @@
 -module(github_events).
 
--export([list_public_events/1,
+-export([list_public_events/1, list_repository_events/3,
          validate/1, generate/1]).
 
 -export_type([actor/0, event/0, event/1, repo/0]).
@@ -43,6 +43,20 @@
 list_public_events(Options) ->
   PerPage = maps:get(per_page, Options, 10),
   Target = #{path => <<"/events">>,
+             query => [{<<"per_page">>, integer_to_binary(PerPage)}]},
+  RequestOptions =
+    maps:merge(maps:with([if_none_match], Options),
+               #{response_body => {jsv, {ref, github, events}}}),
+  github_http:send_request(get, Target, RequestOptions).
+
+-spec list_repository_events(Owner :: binary(), Name :: binary(),
+                             event_options()) ->
+        github:result(event_response()).
+list_repository_events(Owner, Name, Options) ->
+  PerPage = maps:get(per_page, Options, 10),
+  Path =
+    ["/repos/", uri:encode_path(Owner), $/, uri:encode_path(Name), "/events"],
+  Target = #{path => iolist_to_binary(Path),
              query => [{<<"per_page">>, integer_to_binary(PerPage)}]},
   RequestOptions =
     maps:merge(maps:with([if_none_match], Options),
