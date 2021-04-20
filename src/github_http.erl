@@ -58,7 +58,7 @@ send_request(Method, TargetOrPath, Options) ->
           {error, Reason}
       end;
     {error, Reason} ->
-      {error, {request_error, Reason}}
+      {error, {http_error, Reason, Request}}
   end.
 
 -spec finalize_request(mhttp:request(), options()) -> mhttp:request().

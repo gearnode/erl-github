@@ -32,36 +32,81 @@
 
 -type event_response() ::
         #{events := [event()],
-          poll_interval := non_neg_integer(), % seconds
-          etag := binary()}.
+          poll_interval => non_neg_integer(), % seconds
+          etag => binary()}.
 
 -type event_options() ::
         #{per_page => pos_integer(),
           if_none_match => binary()}.
 
--spec list_public_events(event_options()) -> github:result(event_response()).
+-spec list_public_events(event_options()) ->
+        github:result(event_response() | not_modified).
 list_public_events(Options) ->
-  PerPage = maps:get(per_page, Options, 10),
-  Target = #{path => <<"/events">>,
-             query => [{<<"per_page">>, integer_to_binary(PerPage)}]},
-  RequestOptions =
-    maps:merge(maps:with([if_none_match], Options),
-               #{response_body => {jsv, {ref, github, events}}}),
-  github_http:send_request(get, Target, RequestOptions).
+  send_event_request(<<"/events">>, Options).
 
 -spec list_repository_events(Owner :: binary(), Name :: binary(),
                              event_options()) ->
-        github:result(event_response()).
+        github:result(event_response() | not_modified).
 list_repository_events(Owner, Name, Options) ->
+  OwnerPart = uri:encode_path(Owner),
+  NamePart = uri:encode_path(Name),
+  Path = ["/repos/", OwnerPart, $/, NamePart, "/events"],
+  send_event_request(iolist_to_binary(Path), Options).
+
+-spec send_event_request(uri:path(), event_options()) ->
+        github:result(event_response() | not_modified).
+send_event_request(Path, Options) ->
   PerPage = maps:get(per_page, Options, 10),
-  Path =
-    ["/repos/", uri:encode_path(Owner), $/, uri:encode_path(Name), "/events"],
-  Target = #{path => iolist_to_binary(Path),
-             query => [{<<"per_page">>, integer_to_binary(PerPage)}]},
-  RequestOptions =
-    maps:merge(maps:with([if_none_match], Options),
-               #{response_body => {jsv, {ref, github, events}}}),
-  github_http:send_request(get, Target, RequestOptions).
+  Query = [{<<"per_page">>, integer_to_binary(PerPage)}],
+  Target = #{path => Path, query => Query},
+  RequestOptions0 = maps:with([if_none_match], Options),
+  RequestOptions = maps:merge(RequestOptions0,
+                              #{response_body =>
+                                  {jsv, {ref, github, events}}}),
+  case github_http:send_request(get, Target, RequestOptions) of
+    {ok, {Status, Header, Events}} when Status >= 200, Status < 300 ->
+      Response1 = #{events => Events},
+      Response2 = set_response_poll_interval(Response1, Header),
+      Response3 = set_response_etag(Response2, Header),
+      {ok, Response3};
+    {ok, {304, _, _}} ->
+      {ok, not_modified};
+    {ok, {Status, _, _}} ->
+      {error, {request_error, Status, unknown}};
+    {error, Reason} ->
+      {error, Reason}
+  end.
+
+-spec set_response_poll_interval(event_response(), mhttp:header()) ->
+        event_response().
+set_response_poll_interval(Response, Header) ->
+  case mhttp_header:find(Header, <<"X-Poll-Interval">>) of
+    {ok, Value} ->
+      try
+        erlang:binary_to_integer(Value)
+      of
+        N when N >= 0 ->
+          Response#{poll_interval => N};
+        _ ->
+          Response
+      catch
+        error:_ ->
+          Response
+      end;
+    error ->
+      Response
+  end.
+
+-spec set_response_etag(event_response(), mhttp:header()) -> event_response().
+set_response_etag(Response, Header) ->
+  case mhttp_header:find(Header, <<"ETag">>) of
+    {ok, <<"W/", ETag/binary>>} ->
+      Response#{etag => ETag};
+    {ok, ETag} ->
+      Response#{etag => ETag};
+    error ->
+      Response
+  end.
 
 -spec validate(map()) -> jsv:validation_result(event()).
 validate(Event = #{type := Type, payload := Payload}) ->
