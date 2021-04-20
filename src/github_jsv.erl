@@ -589,7 +589,7 @@ event_payload_pull_request_review_definition() ->
 event_payload_pull_request_review_comment_definition() ->
   {object,
    #{members =>
-       #{action => {string, #{values => [created]}},
+       #{action => {string, #{values => [created, edited]}},
          changes => object, % TODO
          pull_request =>  {ref, pull_request},
          comment => object}, % TODO
