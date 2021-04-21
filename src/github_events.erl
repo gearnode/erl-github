@@ -37,12 +37,13 @@
 
 -type event_options() ::
         #{per_page => pos_integer(),
-          if_none_match => binary()}.
+          if_none_match => binary(),
+          pages => all | pos_integer()}.
 
 -spec list_public_events(event_options()) ->
         github:result(event_response() | not_modified).
 list_public_events(Options) ->
-  send_event_request(<<"/events">>, Options).
+  fetch_events(<<"/events">>, Options).
 
 -spec list_repository_events(Owner :: binary(), Name :: binary(),
                              event_options()) ->
@@ -51,29 +52,68 @@ list_repository_events(Owner, Name, Options) ->
   OwnerPart = uri:encode_path(Owner),
   NamePart = uri:encode_path(Name),
   Path = iolist_to_binary(["/repos/", OwnerPart, $/, NamePart, "/events"]),
-  send_event_request(Path, Options).
+  fetch_events(Path, Options).
 
--spec send_event_request(uri:path(), event_options()) ->
+-spec fetch_events(uri:path(), event_options()) ->
         github:result(event_response() | not_modified).
-send_event_request(Path, Options) ->
-  PerPage = maps:get(per_page, Options, 10),
-  Query = [{<<"per_page">>, integer_to_binary(PerPage)}],
-  URI = #{path => Path, query => Query},
-  RequestOptions0 = maps:with([if_none_match], Options),
-  RequestOptions = maps:merge(RequestOptions0,
-                              #{response_body =>
-                                  {jsv, {ref, github, events}}}),
-  case github_http:send_request(get, URI, RequestOptions) of
+fetch_events(Path, EventOptions) ->
+  URI = event_uri(Path, EventOptions),
+  HTTPOptions0 = maps:with([if_none_match], EventOptions),
+  HTTPOptions = maps:merge(HTTPOptions0,
+                           #{response_body => {jsv, {ref, github, events}}}),
+  Response = #{events => []},
+  fetch_events(URI, EventOptions, HTTPOptions, Response).
+
+-spec fetch_events(uri:uri(), event_options(), github_http:options(),
+                   event_response()) ->
+        github:result(event_response() | not_modified).
+fetch_events(URI, EventOptions, HTTPOptions,
+             Response = #{events := Events}) ->
+  case github_http:send_request(get, URI, HTTPOptions) of
     {ok, {304, _, _}} ->
       {ok, not_modified};
-    {ok, {_, Header, Events}} ->
-      Response1 = #{events => Events},
-      Response2 = set_response_poll_interval(Response1, Header),
-      Response3 = set_response_etag(Response2, Header),
-      {ok, Response3};
+    {ok, {_, Header, ResponseEvents}} ->
+      %% The handling of the first response is different since we need to
+      %% collect data from the header then modify HTTP options for
+      %% subsequence HTTP options.
+      {Response2, HTTPOptions2} =
+        case Events of
+          [] ->
+            {lists:foldl(fun (F, Res) ->
+                            F(Res, Header)
+                        end, Response#{events => ResponseEvents},
+                        [fun set_response_poll_interval/2,
+                         fun set_response_etag/2]),
+             HTTPOptions};
+          _ ->
+            {Response#{events => Events ++ ResponseEvents},
+             maps:remove(if_none_match, HTTPOptions)}
+        end,
+      case github_http:next_page_uri(Header) of
+        {ok, NextURI} ->
+          case maps:get(pages, EventOptions, 1) of
+            all ->
+              fetch_events(NextURI, EventOptions, HTTPOptions2, Response2);
+            N when is_integer(N), N > 1 ->
+              EventOptions2 = EventOptions#{pages => N-1},
+              fetch_events(NextURI, EventOptions2, HTTPOptions2, Response2);
+            1 ->
+              {ok, Response2}
+          end;
+        error ->
+          {ok, Response2};
+        {error, Reason} ->
+          {error, Reason}
+      end;
     {error, Reason} ->
       {error, Reason}
   end.
+
+-spec event_uri(uri:path(), event_options()) -> uri:uri().
+event_uri(Path, Options) ->
+  PerPage = maps:get(per_page, Options, 10),
+  Query = [{<<"per_page">>, integer_to_binary(PerPage)}],
+  #{path => Path, query => Query}.
 
 -spec set_response_poll_interval(event_response(), mhttp:header()) ->
         event_response().

@@ -1,6 +1,7 @@
 -module(github_http).
 
--export([send_request/2, send_request/3]).
+-export([send_request/2, send_request/3,
+         next_page_uri/1, link_uri/2]).
 
 -export_type([options/0, request_body_spec/0, response_body_spec/0,
               response/0, response_body/0]).
@@ -169,4 +170,24 @@ decode_response_body(Body, {jsv, Definition}) ->
       end;
     {error, Reason} ->
       {error, Reason}
+  end.
+
+-spec next_page_uri(mhttp:header()) ->
+        github:result(uri:uri()) | error.
+next_page_uri(Header) ->
+  link_uri(Header, <<"next">>).
+
+-spec link_uri(mhttp:header(), github_hypermedia:relation()) ->
+        github:result(uri:uri()) | error.
+link_uri(Header, Relation) ->
+  case mhttp_header:find(Header, <<"link">>) of
+    {ok, Value} ->
+      case github_hypermedia:parse_links(Value) of
+        {ok, Links} ->
+          maps:find(Relation, Links);
+        {error, Reason} ->
+          {error, Reason}
+      end;
+    error ->
+      error
   end.
