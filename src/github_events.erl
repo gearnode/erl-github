@@ -50,8 +50,8 @@ list_public_events(Options) ->
 list_repository_events(Owner, Name, Options) ->
   OwnerPart = uri:encode_path(Owner),
   NamePart = uri:encode_path(Name),
-  Path = ["/repos/", OwnerPart, $/, NamePart, "/events"],
-  send_event_request(iolist_to_binary(Path), Options).
+  Path = iolist_to_binary(["/repos/", OwnerPart, $/, NamePart, "/events"]),
+  send_event_request(Path, Options).
 
 -spec send_event_request(uri:path(), event_options()) ->
         github:result(event_response() | not_modified).
