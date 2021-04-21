@@ -1,6 +1,7 @@
 -module(github_http).
 
--export([get_resource/3, send_request/2, send_request/3,
+-export([get_resource/3, get_resources/3,
+         send_request/2, send_request/3,
          next_page_uri/1, link_uri/2]).
 
 -export_type([options/0, request_body_spec/0, response_body_spec/0,
@@ -36,6 +37,37 @@ get_resource(Method, URI, JSVDefinition) ->
   case send_request(Method, URI, Options) of
     {ok, {Status, _Header, Value}} when Status >= 200, Status < 300 ->
       {ok, Value};
+    {ok, {Status, _Header, _Value}} ->
+      {error, {request_error, Status, undefined}};
+    {error, Reason} ->
+      {error, Reason}
+  end.
+
+-spec get_resources(mhttp:method(), uri:uri(), jsv:definition()) ->
+        github:result([term()]).
+get_resources(Method, URI, JSVDefinition0) ->
+  JSVDefinition = {array, #{element => JSVDefinition0}},
+  Options = #{response_body => {jsv, JSVDefinition}},
+  get_resources(Method, URI, Options, []).
+
+-spec get_resources(mhttp:method(), uri:uri(), options(), [term()]) ->
+        github:result([term()]).
+get_resources(Method, URI, Options, Acc) ->
+  case send_request(Method, URI, Options) of
+    {ok, {Status, Header, Values}} when Status >= 200, Status < 300 ->
+      case Values of
+        [] ->
+          {ok, lists:flatten(lists:reverse(Acc))};
+        _ ->
+          case github_http:next_page_uri(Header) of
+            {ok, NextURI} ->
+              get_resources(Method, NextURI, Options, [Values | Acc]);
+            error ->
+              {ok, lists:flatten(lists:reverse(Acc))};
+            {error, Reason} ->
+              {error, Reason}
+          end
+      end;
     {ok, {Status, _Header, _Value}} ->
       {error, {request_error, Status, undefined}};
     {error, Reason} ->

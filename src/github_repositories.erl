@@ -1,6 +1,6 @@
 -module(github_repositories).
 
--export([get_repository/2]).
+-export([get_repository/2, list_org_repositories/1]).
 
 -export_type([repository/0]).
 
@@ -29,3 +29,11 @@ get_repository(Owner, Name) ->
   Path = iolist_to_binary(["/repos/", OwnerPart, $/, NamePart]),
   URI = #{path => Path},
   github_http:get_resource(get, URI, {ref, github, repository}).
+
+-spec list_org_repositories(Org :: binary()) ->
+        github:result([repository()]).
+list_org_repositories(Org) ->
+  OrgPart = uri:encode_path(Org),
+  Path = iolist_to_binary(["/orgs/", OrgPart, "/repos"]),
+  URI = #{path => Path},
+  github_http:get_resources(get, URI, {ref, github, repository}).
