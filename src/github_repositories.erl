@@ -24,16 +24,11 @@
 -spec get_repository(Owner :: binary(), Name :: binary()) ->
         github:result(repository()).
 get_repository(Owner, Name) ->
-  OwnerPart = uri:encode_path(Owner),
-  NamePart = uri:encode_path(Name),
-  Path = iolist_to_binary(["/repos/", OwnerPart, $/, NamePart]),
-  URI = #{path => Path},
+  URI = #{path => uri_paths:join([<<"repos">>, Owner, Name])},
   github_http:get_resource(get, URI, {ref, github, repository}).
 
 -spec list_org_repositories(Org :: binary()) ->
         github:result([repository()]).
 list_org_repositories(Org) ->
-  OrgPart = uri:encode_path(Org),
-  Path = iolist_to_binary(["/orgs/", OrgPart, "/repos"]),
-  URI = #{path => Path},
+  URI = #{path => uri_paths:join([<<"orgs">>, Org, <<"repos">>])},
   github_http:get_resources(get, URI, {ref, github, repository}).
