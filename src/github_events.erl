@@ -58,12 +58,12 @@ list_repository_events(Owner, Name, Options) ->
 send_event_request(Path, Options) ->
   PerPage = maps:get(per_page, Options, 10),
   Query = [{<<"per_page">>, integer_to_binary(PerPage)}],
-  Target = #{path => Path, query => Query},
+  URI = #{path => Path, query => Query},
   RequestOptions0 = maps:with([if_none_match], Options),
   RequestOptions = maps:merge(RequestOptions0,
                               #{response_body =>
                                   {jsv, {ref, github, events}}}),
-  case github_http:send_request(get, Target, RequestOptions) of
+  case github_http:send_request(get, URI, RequestOptions) of
     {ok, {Status, Header, Events}} when Status >= 200, Status < 300 ->
       Response1 = #{events => Events},
       Response2 = set_response_poll_interval(Response1, Header),

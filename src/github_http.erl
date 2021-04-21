@@ -28,21 +28,14 @@
 
 -type response_body() :: none | binary() | json:value() | term().
 
--spec send_request(mhttp:method(), uri:uri() | uri:path()) ->
-        github:result(response()).
-send_request(Method, TargetOrPath) ->
-  send_request(Method, TargetOrPath, #{}).
+-spec send_request(mhttp:method(), uri:uri()) -> github:result(response()).
+send_request(Method, URI) ->
+  send_request(Method, URI, #{}).
 
--spec send_request(mhttp:method(), uri:uri() | uri:path(), options()) ->
+-spec send_request(mhttp:method(), uri:uri(), options()) ->
         github:result(response()).
-send_request(Method, TargetOrPath, Options) ->
-  Target = case TargetOrPath of
-             Path when is_binary(Path) ->
-               #{path => Path};
-             URI when is_map(URI) ->
-               URI
-           end,
-  Request0 = #{method => Method, target => Target},
+send_request(Method, URI, Options) ->
+  Request0 = #{method => Method, target => URI},
   Request = finalize_request(Request0, Options),
   PoolId = maps:get(mhttp_pool, Options, default),
   case mhttp:send_request(Request, #{pool => PoolId}) of
