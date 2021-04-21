@@ -80,10 +80,10 @@ fetch_events(URI, EventOptions, HTTPOptions,
         case Events of
           [] ->
             {lists:foldl(fun (F, Res) ->
-                            F(Res, Header)
-                        end, Response#{events => ResponseEvents},
-                        [fun set_response_poll_interval/2,
-                         fun set_response_etag/2]),
+                             F(Res, Header)
+                         end, Response#{events => ResponseEvents},
+                         [fun set_response_poll_interval/2,
+                          fun set_response_etag/2]),
              HTTPOptions};
           _ ->
             {Response#{events => Events ++ ResponseEvents},
