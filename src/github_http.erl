@@ -39,8 +39,8 @@ send_request(Method, URI, Options) ->
   Request = finalize_request(Request0, Options),
   PoolId = maps:get(mhttp_pool, Options, default),
   case mhttp:send_request(Request, #{pool => PoolId}) of
-    {ok, Response} ->
-      Status = mhttp_response:status(Response),
+    {ok, Response = #{status := Status}} when
+        Status >= 200, Status < 300; Status =:= 304 ->
       Header = mhttp_response:header(Response),
       Body = mhttp_response:body(Response),
       Spec = maps:get(response_body, Options, data),
@@ -50,6 +50,9 @@ send_request(Method, URI, Options) ->
         {error, Reason} ->
           {error, Reason}
       end;
+    {ok, Response = #{status := Status}} ->
+      ErrorString = mhttp_response:reason(Response),
+      {error, {request_error, Status, ErrorString, Request}};
     {error, Reason} ->
       {error, {http_error, Reason, Request}}
   end.

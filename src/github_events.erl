@@ -64,15 +64,13 @@ send_event_request(Path, Options) ->
                               #{response_body =>
                                   {jsv, {ref, github, events}}}),
   case github_http:send_request(get, URI, RequestOptions) of
-    {ok, {Status, Header, Events}} when Status >= 200, Status < 300 ->
+    {ok, {304, _, _}} ->
+      {ok, not_modified};
+    {ok, {_, Header, Events}} ->
       Response1 = #{events => Events},
       Response2 = set_response_poll_interval(Response1, Header),
       Response3 = set_response_etag(Response2, Header),
       {ok, Response3};
-    {ok, {304, _, _}} ->
-      {ok, not_modified};
-    {ok, {Status, _, _}} ->
-      {error, {request_error, Status, unknown}};
     {error, Reason} ->
       {error, Reason}
   end.
