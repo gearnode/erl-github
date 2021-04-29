@@ -1,6 +1,6 @@
 -module(github_events).
 
--export([list_public_events/1, list_repository_events/3,
+-export([list_public_events/1, list_org_events/3, list_repository_events/3,
          validate/1, generate/1]).
 
 -export_type([actor/0, event/0, event/1, repo/0]).
@@ -44,6 +44,16 @@
         github:result(event_response() | not_modified).
 list_public_events(Options) ->
   fetch_events(<<"/events">>, Options).
+
+-spec list_org_events(Username :: binary(), Name :: binary(),
+                      event_options()) ->
+        github:result(event_response() | not_modified).
+list_org_events(Username, Name, Options) ->
+  UsernamePart = uri:encode_path(Username),
+  NamePart = uri:encode_path(Name),
+  Path =
+    iolist_to_binary(["/users/", UsernamePart, "/events/orgs/", NamePart]),
+  fetch_events(Path, Options).
 
 -spec list_repository_events(Owner :: binary(), Name :: binary(),
                              event_options()) ->
