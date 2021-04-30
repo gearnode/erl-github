@@ -39,8 +39,8 @@
 
 -type event_options() ::
         #{per_page => pos_integer(),
-          if_none_match => binary(),
-          pages => all | pos_integer()}.
+          pages => all | pos_integer(),
+          http_options => github_http:options()}.
 
 -spec list_public_events(event_options()) ->
         github:result(event_response() | not_modified).
@@ -70,7 +70,7 @@ list_repository_events(Owner, Name, Options) ->
         github:result(event_response() | not_modified).
 fetch_events(Path, EventOptions) ->
   URI = event_uri(Path, EventOptions),
-  HTTPOptions0 = maps:with([if_none_match], EventOptions),
+  HTTPOptions0 = maps:get(http_options, EventOptions, #{}),
   HTTPOptions = maps:merge(HTTPOptions0,
                            #{response_body => {jsv, {ref, github, events}}}),
   Response = #{events => []},
