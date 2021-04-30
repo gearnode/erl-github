@@ -4,7 +4,8 @@
          list_repository_events/3,
          validate/1, generate/1]).
 
--export_type([actor/0, event/0, event/1, repo/0]).
+-export_type([actor/0, event/0, event/1, repo/0,
+              event_response/0, event_options/0]).
 
 -type actor() ::
         #{id := integer(),
