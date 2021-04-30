@@ -38,7 +38,8 @@
           etag => binary()}.
 
 -type event_options() ::
-        #{per_page => pos_integer(),
+        #{first_page => pos_integer(),
+          per_page => pos_integer(),
           pages => all | pos_integer(),
           http_options => github_http:options()}.
 
@@ -123,8 +124,10 @@ fetch_events(URI, EventOptions, HTTPOptions,
 
 -spec event_uri(uri:path(), event_options()) -> uri:uri().
 event_uri(Path, Options) ->
+  FirstPage = maps:get(first_page, Options, 1),
   PerPage = maps:get(per_page, Options, 10),
-  Query = [{<<"per_page">>, integer_to_binary(PerPage)}],
+  Query = [{<<"page">>, integer_to_binary(FirstPage)},
+           {<<"per_page">>, integer_to_binary(PerPage)}],
   #{path => Path, query => Query}.
 
 -spec set_response_poll_interval(event_response(), mhttp:header()) ->
