@@ -1,7 +1,5 @@
 -module(github).
 
--export([]).
-
 -export_type([result/0, result/1, error_reason/0,
               authentication/0]).
 
@@ -16,4 +14,5 @@
       | {invalid_hypermedia_data, github_hypermedia:error_reason()}.
 
 -type authentication() ::
-        {personal, User :: binary(), Token :: binary()}.
+        {personal, User :: binary(), Token :: binary()}
+      | {oauth2, AccessToken :: binary()}.

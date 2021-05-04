@@ -127,6 +127,11 @@ set_request_auth(Request, #{authentication := {personal, User, Token}}) ->
   Header = mhttp_request:header(Request),
   Header2 = mhttp_header:add_basic_authorization(Header, User, Token),
   Request#{header => Header2};
+set_request_auth(Request, #{authentication := {oauth2, AccessToken}}) ->
+  Header = mhttp_request:header(Request),
+  Header2 = mhttp_header:add(Header, <<"Authorization">>,
+                             <<"token ", AccessToken/binary>>),
+  Request#{header => Header2};
 set_request_auth(Request, _Options) ->
   Request.
 
