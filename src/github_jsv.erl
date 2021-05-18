@@ -42,7 +42,14 @@ catalog() ->
     event_payload_push => event_payload_push_definition(),
     event_payload_release => event_payload_release_definition(),
     event_payload_sponsorship => event_payload_sponsorship_definition(),
-    event_payload_watch => event_payload_watch_definition()}.
+    event_payload_watch => event_payload_watch_definition(),
+    hook => hook_definition(),
+    hooks => {array, #{element => {ref, hook}}},
+    hook_config => hook_config_definition(),
+    hook_response => hook_response_definition(),
+    org_hook => org_hook_definition(),
+    org_hooks => {array, #{element => {ref, org_hook}}},
+    org_hook_config => org_hook_config_definition()}.
 
 -spec ref_type_definition() -> jsv:definition().
 ref_type_definition() ->
@@ -646,5 +653,81 @@ event_payload_watch_definition() ->
   {object,
    #{members =>
        #{action => {string, #{values => [started]}}},
+     required =>
+       []}}.
+
+-spec hook_definition() -> jsv:definition().
+hook_definition() ->
+  {object,
+   #{members =>
+       #{type => string,
+         id => integer,
+         name => string,
+         active => boolean,
+         events => {array, #{element => string}},
+         config => {ref, hook_config},
+         updated_at => datetime,
+         created_at => datetime,
+         url => uri,
+         test_url => uri,
+         ping_url => uri,
+         last_response => {ref, hook_response}},
+     required =>
+       [id, url, type, name, active, events, config, ping_url,
+        created_at, updated_at, last_response, test_url]}}.
+
+-spec hook_config_definition() -> jsv:definition().
+hook_config_definition() ->
+  {object,
+   #{members =>
+       #{email => string,
+         password => string,
+         room => string,
+         subdomain => string,
+         url => uri,
+         insecure_ssl => {one_of, [string, integer]},
+         content_type => string,
+         digest => string,
+         secret => string,
+         token => string},
+     required =>
+       []}}.
+
+-spec hook_response_definition() -> jsv:definition().
+hook_response_definition() ->
+  {object,
+   #{members =>
+       #{code => string,
+         status => string,
+         message => string},
+     required =>
+       [code, status, message]}}.
+
+-spec org_hook_definition() -> jsv:definition().
+org_hook_definition() ->
+  {object,
+   #{members =>
+       #{id => integer,
+         url => uri,
+         ping_url => string,
+         name => string,
+         events => {array, #{element => string}},
+         active => boolean,
+         config => {ref, org_hook_config},
+         updated_at => datetime,
+         created_at => datetime,
+         type => string},
+     required =>
+       [id, url, type, name, active, events, config, ping_url,
+        created_at, updated_at]}}.
+
+-spec org_hook_config_definition() -> jsv:definition().
+org_hook_config_definition() ->
+  {object,
+   #{members =>
+       #{url => uri,
+         insecure_ssl => string,
+         content_type => string,
+         secret => string},
      required =>
        []}}.
