@@ -8,7 +8,10 @@
 
 -spec catalog() -> jsv:catalog().
 catalog() ->
-  #{ref_type => ref_type_definition(),
+  #{error => error_definition(),
+    simple_validation_error => simple_validation_error_definition(),
+    validation_error => validation_error_definition(),
+    ref_type => ref_type_definition(),
     author_association => author_association_definition(),
     reaction_rollup => reaction_rollup_definition(),
     simple_user => simple_user_definition(),
@@ -52,6 +55,39 @@ catalog() ->
     org_hook => org_hook_definition(),
     org_hooks => {array, #{element => {ref, org_hook}}},
     org_hook_config => org_hook_config_definition()}.
+
+-spec error_definition() -> jsv:definition().
+error_definition() ->
+  {object,
+   #{members =>
+       #{message => string,
+         documentation_url => uri,
+         errors => {array,
+                    #{element =>
+                        {one_of, [{ref, simple_validation_error},
+                                  {ref, validation_error}]}}}},
+     required =>
+       [message]}}.
+
+-spec simple_validation_error_definition() -> jsv:definition().
+simple_validation_error_definition() ->
+  string.
+
+-spec validation_error_definition() -> jsv:definition().
+validation_error_definition() ->
+{object,
+   #{members =>
+       #{resource => string,
+         field => string,
+         message => string,
+         code => string,
+         index => integer,
+         value => {one_of, [string,
+                            integer,
+                            {array, #{element => string}},
+                            null]}},
+     required =>
+       [code]}}.
 
 -spec ref_type_definition() -> jsv:definition().
 ref_type_definition() ->

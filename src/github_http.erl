@@ -131,10 +131,31 @@ send_request(Method, URI, Options) ->
           {error, Reason}
       end;
     {ok, Response = #{status := Status}} ->
-      ErrorString = mhttp_response:reason(Response),
-      {error, {request_error, Status, ErrorString}};
+      {error, {request_error, Status, request_error_reason(Response)}};
     {error, Reason} ->
       {error, {http_error, Reason, Request}}
+  end.
+
+-spec request_error_reason(mhttp:response()) -> github:request_error_reason().
+request_error_reason(Response) ->
+  case mhttp_response:body(Response) of
+    <<>> ->
+      mhttp_response:reason(Response);
+    Body ->
+      case json:parse(Body) of
+        {ok, Value} ->
+          Definition = {ref, github, error},
+          Options = #{unknown_member_handling => remove,
+                      null_member_handling => remove},
+          case jsv:validate(Value, Definition, Options) of
+            {ok, Term} ->
+              Term;
+            {error, _} ->
+              Body
+          end;
+        {error, _} ->
+          Body
+      end
   end.
 
 -spec finalize_request(mhttp:request(), options()) -> mhttp:request().
