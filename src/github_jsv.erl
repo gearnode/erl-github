@@ -43,6 +43,8 @@ catalog() ->
     event_payload_release => event_payload_release_definition(),
     event_payload_sponsorship => event_payload_sponsorship_definition(),
     event_payload_watch => event_payload_watch_definition(),
+    new_hook => new_hook_definition(),
+    new_hook_config => new_hook_config_definition(),
     hook => hook_definition(),
     hooks => {array, #{element => {ref, hook}}},
     hook_config => hook_config_definition(),
@@ -656,6 +658,30 @@ event_payload_watch_definition() ->
      required =>
        []}}.
 
+-spec new_hook_definition() -> jsv:definition().
+new_hook_definition() ->
+  {object,
+   #{members =>
+       #{type => string,
+         active => boolean,
+         events => {array, #{element => string}},
+         config => {ref, new_hook_config}},
+     required =>
+       []}}.
+
+-spec new_hook_config_definition() -> jsv:definition().
+new_hook_config_definition() ->
+  {object,
+   #{members =>
+       #{url => uri,
+         insecure_ssl => {one_of, [string, integer]},
+         content_type => string,
+         digest => string,
+         secret => string,
+         token => string},
+     required =>
+       []}}.
+
 -spec hook_definition() -> jsv:definition().
 hook_definition() ->
   {object,
@@ -701,7 +727,7 @@ hook_response_definition() ->
          status => string,
          message => string},
      required =>
-       [code, status, message]}}.
+       [status]}}.
 
 -spec org_hook_definition() -> jsv:definition().
 org_hook_definition() ->

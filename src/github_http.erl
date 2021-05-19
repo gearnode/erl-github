@@ -1,6 +1,6 @@
 -module(github_http).
 
--export([get_resource/3, get_resources/3,
+-export([get_resource/3, get_resources/3, create_resource/5,
          send_request/2, send_request/3,
          next_page_uri/1, link_uri/2]).
 
@@ -38,6 +38,7 @@ get_resource(Method, URI, JSVDefinition) ->
     {ok, {Status, _Header, Value}} when Status >= 200, Status < 300 ->
       {ok, Value};
     {ok, {Status, _Header, _Value}} ->
+      %% TODO error
       {error, {request_error, Status, undefined}};
     {error, Reason} ->
       {error, Reason}
@@ -69,6 +70,24 @@ get_resources(Method, URI, Options, Acc) ->
           end
       end;
     {ok, {Status, _Header, _Value}} ->
+      %% TODO error
+      {error, {request_error, Status, undefined}};
+    {error, Reason} ->
+      {error, Reason}
+  end.
+
+-spec create_resource(mhttp:method(), uri:uri(), term(),
+                      jsv:definition(), jsv:definition()) ->
+        github:result(term()).
+create_resource(Method, URI, RequestData, RequestJSVDefinition,
+                ResponseJSVDefinition) ->
+  Options = #{request_body => {jsv, RequestData, RequestJSVDefinition},
+              response_body => {jsv, ResponseJSVDefinition}},
+  case send_request(Method, URI, Options) of
+    {ok, {Status, _Header, Value}} when Status >= 200, Status < 300 ->
+      {ok, Value};
+    {ok, {Status, _Header, _Value}} ->
+      %% TODO error
       {error, {request_error, Status, undefined}};
     {error, Reason} ->
       {error, Reason}
