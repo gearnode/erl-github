@@ -700,7 +700,7 @@ event_payload_watch_definition() ->
 new_hook_definition() ->
   {object,
    #{members =>
-       #{type => string,
+       #{name => string,
          active => boolean,
          events => {array, #{element => string}},
          config => {ref, new_hook_config}},

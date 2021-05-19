@@ -6,7 +6,7 @@
               hook/0, hook_config/0, hook_response/0]).
 
 -type new_hook() ::
-        #{type => binary(),
+        #{name => binary(),
           active => boolean(),
           events => [binary()],
           config => new_hook_config()}.
