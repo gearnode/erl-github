@@ -52,6 +52,8 @@ catalog() ->
     hooks => {array, #{element => {ref, hook}}},
     hook_config => hook_config_definition(),
     hook_response => hook_response_definition(),
+    new_org_hook => new_org_hook_definition(),
+    new_org_hook_config => new_org_hook_config_definition(),
     org_hook => org_hook_definition(),
     org_hooks => {array, #{element => {ref, org_hook}}},
     org_hook_config => org_hook_config_definition()}.
@@ -753,7 +755,7 @@ hook_config_definition() ->
          secret => string,
          token => string},
      required =>
-       []}}.
+       [url]}}.
 
 -spec hook_response_definition() -> jsv:definition().
 hook_response_definition() ->
@@ -764,6 +766,30 @@ hook_response_definition() ->
          message => string},
      required =>
        [status]}}.
+
+-spec new_org_hook_definition() -> jsv:definition().
+new_org_hook_definition() ->
+  {object,
+   #{members =>
+       #{name => string,
+         events => {array, #{element => string}},
+         active => boolean,
+         config => {ref, new_org_hook_config}},
+     required =>
+       [name, config]}}.
+
+-spec new_org_hook_config_definition() -> jsv:definition().
+new_org_hook_config_definition() ->
+  {object,
+   #{members =>
+       #{url => uri,
+         insecure_ssl => {one_of, [string, integer]},
+         content_type => string,
+         digest => string,
+         secret => string,
+         token => string},
+     required =>
+       [url]}}.
 
 -spec org_hook_definition() -> jsv:definition().
 org_hook_definition() ->

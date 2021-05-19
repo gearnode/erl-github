@@ -6,13 +6,13 @@
               hook/0, hook_config/0, hook_response/0]).
 
 -type new_hook() ::
-        #{type := binary(),
-          active := boolean(),
-          events := [binary()],
-          config := new_hook_config()}.
+        #{type => binary(),
+          active => boolean(),
+          events => [binary()],
+          config => new_hook_config()}.
 
 -type new_hook_config() ::
-        #{url => binary(),
+        #{url := binary(),
           insecure_ssl => binary() | integer(),
           content_type => binary(),
           digest => binary(),
