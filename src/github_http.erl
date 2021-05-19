@@ -1,6 +1,7 @@
 -module(github_http).
 
 -export([get_resource/3, get_resources/3, create_resource/5,
+         delete_resource/2,
          send_request/2, send_request/3,
          next_page_uri/1, link_uri/2]).
 
@@ -86,6 +87,20 @@ create_resource(Method, URI, RequestData, RequestJSVDefinition,
   case send_request(Method, URI, Options) of
     {ok, {Status, _Header, Value}} when Status >= 200, Status < 300 ->
       {ok, Value};
+    {ok, {Status, _Header, _Value}} ->
+      %% TODO error
+      {error, {request_error, Status, undefined}};
+    {error, Reason} ->
+      {error, Reason}
+  end.
+
+-spec delete_resource(mhttp:method(), uri:uri()) ->
+        github:result().
+delete_resource(Method, URI) ->
+  Options = #{},
+  case send_request(Method, URI, Options) of
+    {ok, {Status, _Header, _Value}} when Status >= 200, Status < 300 ->
+      ok;
     {ok, {Status, _Header, _Value}} ->
       %% TODO error
       {error, {request_error, Status, undefined}};
