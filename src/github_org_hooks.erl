@@ -37,7 +37,8 @@
           content_type => binary(),
           secret => binary()}.
 
--spec create_org_hook(Org :: binary(), new_org_hook()) -> github:result().
+-spec create_org_hook(Org :: binary(), new_org_hook()) ->
+        github:result(org_hook()).
 create_org_hook(Org, NewHook) ->
   URI = #{path => uri_paths:join([<<"orgs">>, Org, <<"hooks">>])},
   github_http:create_resource(post, URI, NewHook, {ref, github, new_org_hook},

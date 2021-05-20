@@ -51,7 +51,7 @@
           message => binary()}.
 
 -spec create_hook(Owner :: binary(), Name :: binary(), new_hook()) ->
-        github:result().
+        github:result(hook()).
 create_hook(Owner, Name, NewHook) ->
   URI = #{path => uri_paths:join([<<"repos">>, Owner, Name, <<"hooks">>])},
   github_http:create_resource(post, URI, NewHook, {ref, github, new_hook},
