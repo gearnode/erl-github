@@ -1,19 +1,15 @@
 -module(github_http).
 
--export([get_resource/3, get_resources/3, create_resource/5,
-         delete_resource/2,
-         send_request/2, send_request/3,
+-export([get_resource/4, get_resources/4, create_resource/6,
+         delete_resource/3,
+         send_request/3, send_request/4,
          next_page_uri/1, link_uri/2]).
 
 -export_type([options/0, request_body_spec/0, response_body_spec/0,
               response/0, response_body/0]).
 
 -type options() ::
-        #{mhttp_pool => mhttp:pool_id(),
-          endpoint => binary() | uri:uri(),
-          authentication => github:authentication(),
-          user_agent => binary(),
-          if_none_match => binary(),
+        #{if_none_match => binary(),
           request_body => request_body_spec(),
           response_body => response_body_spec()}.
 
@@ -31,11 +27,12 @@
 
 -type response_body() :: none | binary() | json:value() | term().
 
--spec get_resource(mhttp:method(), uri:uri(), jsv:definition()) ->
+-spec get_resource(mhttp:method(), uri:uri(), github:options(),
+                   jsv:definition()) ->
         github:result(term()).
-get_resource(Method, URI, JSVDefinition) ->
-  Options = #{response_body => {jsv, JSVDefinition}},
-  case send_request(Method, URI, Options) of
+get_resource(Method, URI, Options, JSVDefinition) ->
+  HTTPOptions = #{response_body => {jsv, JSVDefinition}},
+  case send_request(Method, URI, Options, HTTPOptions) of
     {ok, {Status, _Header, Value}} when Status >= 200, Status < 300 ->
       {ok, Value};
     {ok, {Status, _Header, _Value}} ->
@@ -45,17 +42,19 @@ get_resource(Method, URI, JSVDefinition) ->
       {error, Reason}
   end.
 
--spec get_resources(mhttp:method(), uri:uri(), jsv:definition()) ->
+-spec get_resources(mhttp:method(), uri:uri(), github:options(),
+                    jsv:definition()) ->
         github:result([term()]).
-get_resources(Method, URI, JSVDefinition0) ->
+get_resources(Method, URI, Options, JSVDefinition0) ->
   JSVDefinition = {array, #{element => JSVDefinition0}},
-  Options = #{response_body => {jsv, JSVDefinition}},
-  get_resources(Method, URI, Options, []).
+  HTTPOptions = #{response_body => {jsv, JSVDefinition}},
+  get_resources(Method, URI, Options, HTTPOptions, []).
 
--spec get_resources(mhttp:method(), uri:uri(), options(), [term()]) ->
+-spec get_resources(mhttp:method(), uri:uri(), github:options(), options(),
+                    [term()]) ->
         github:result([term()]).
-get_resources(Method, URI, Options, Acc) ->
-  case send_request(Method, URI, Options) of
+get_resources(Method, URI, Options, HTTPOptions, Acc) ->
+  case send_request(Method, URI, Options, HTTPOptions) of
     {ok, {Status, Header, Values}} when Status >= 200, Status < 300 ->
       case Values of
         [] ->
@@ -63,7 +62,8 @@ get_resources(Method, URI, Options, Acc) ->
         _ ->
           case github_http:next_page_uri(Header) of
             {ok, NextURI} ->
-              get_resources(Method, NextURI, Options, [Values | Acc]);
+              get_resources(Method, NextURI, Options, HTTPOptions,
+                            [Values | Acc]);
             error ->
               {ok, lists:flatten(lists:reverse(Acc))};
             {error, Reason} ->
@@ -77,14 +77,14 @@ get_resources(Method, URI, Options, Acc) ->
       {error, Reason}
   end.
 
--spec create_resource(mhttp:method(), uri:uri(), term(),
+-spec create_resource(mhttp:method(), uri:uri(), github:options(), term(),
                       jsv:definition(), jsv:definition()) ->
         github:result(term()).
-create_resource(Method, URI, RequestData, RequestJSVDefinition,
+create_resource(Method, URI, Options, RequestData, RequestJSVDefinition,
                 ResponseJSVDefinition) ->
-  Options = #{request_body => {jsv, RequestData, RequestJSVDefinition},
-              response_body => {jsv, ResponseJSVDefinition}},
-  case send_request(Method, URI, Options) of
+  HTTPOptions = #{request_body => {jsv, RequestData, RequestJSVDefinition},
+                  response_body => {jsv, ResponseJSVDefinition}},
+  case send_request(Method, URI, Options, HTTPOptions) of
     {ok, {Status, _Header, Value}} when Status >= 200, Status < 300 ->
       {ok, Value};
     {ok, {Status, _Header, _Value}} ->
@@ -94,11 +94,11 @@ create_resource(Method, URI, RequestData, RequestJSVDefinition,
       {error, Reason}
   end.
 
--spec delete_resource(mhttp:method(), uri:uri()) ->
+-spec delete_resource(mhttp:method(), uri:uri(), github:options()) ->
         github:result().
-delete_resource(Method, URI) ->
-  Options = #{},
-  case send_request(Method, URI, Options) of
+delete_resource(Method, URI, Options) ->
+  HTTPOptions = #{},
+  case send_request(Method, URI, Options, HTTPOptions) of
     {ok, {Status, _Header, _Value}} when Status >= 200, Status < 300 ->
       ok;
     {ok, {Status, _Header, _Value}} ->
@@ -108,22 +108,23 @@ delete_resource(Method, URI) ->
       {error, Reason}
   end.
 
--spec send_request(mhttp:method(), uri:uri()) -> github:result(response()).
-send_request(Method, URI) ->
-  send_request(Method, URI, #{}).
-
--spec send_request(mhttp:method(), uri:uri(), options()) ->
+-spec send_request(mhttp:method(), uri:uri(), github:options()) ->
         github:result(response()).
 send_request(Method, URI, Options) ->
+  send_request(Method, URI, Options, #{}).
+
+-spec send_request(mhttp:method(), uri:uri(), github:options(), options()) ->
+        github:result(response()).
+send_request(Method, URI, Options, HTTPOptions) ->
   Request0 = #{method => Method, target => URI},
-  Request = finalize_request(Request0, Options),
+  Request = finalize_request(Request0, Options, HTTPOptions),
   PoolId = maps:get(mhttp_pool, Options, default),
   case mhttp:send_request(Request, #{pool => PoolId}) of
     {ok, Response = #{status := Status}} when
         Status >= 200, Status < 300; Status =:= 304 ->
       Header = mhttp_response:header(Response),
       Body = mhttp_response:body(Response),
-      Spec = maps:get(response_body, Options, data),
+      Spec = maps:get(response_body, HTTPOptions, data),
       case decode_response_body(Body, Spec) of
         {ok, Term} ->
           {ok, {Status, Header, Term}};
@@ -158,55 +159,61 @@ request_error_reason(Response) ->
       end
   end.
 
--spec finalize_request(mhttp:request(), options()) -> mhttp:request().
-finalize_request(Request, Options) ->
-  Funs = [fun set_request_target/2,
-          fun set_request_auth/2,
-          fun set_request_if_none_match/2,
-          fun set_request_user_agent/2,
-          fun set_request_header/2,
-          fun set_request_body/2],
+-spec finalize_request(mhttp:request(), github:options(), options()) ->
+        mhttp:request().
+finalize_request(Request, Options, HTTPOptions) ->
+  Funs = [fun set_request_target/3,
+          fun set_request_auth/3,
+          fun set_request_if_none_match/3,
+          fun set_request_user_agent/3,
+          fun set_request_header/3,
+          fun set_request_body/3],
   lists:foldl(fun (Fun, Req) ->
-                  Fun(Req, Options)
+                  Fun(Req, Options, HTTPOptions)
               end, Request, Funs).
 
--spec set_request_target(mhttp:request(), options()) -> mhttp:request().
-set_request_target(Request, Options) ->
+-spec set_request_target(mhttp:request(), github:options(), options()) ->
+        mhttp:request().
+set_request_target(Request, Options, _) ->
   TargetRef = mhttp_request:target_uri(Request),
   TargetBase = endpoint_uri(Options),
   Target = uri:resolve_reference(TargetRef, TargetBase),
   Request#{target => Target}.
 
--spec set_request_auth(mhttp:request(), options()) -> mhttp:request().
-set_request_auth(Request, #{authentication := {personal, User, Token}}) ->
+-spec set_request_auth(mhttp:request(), github:options(), options()) ->
+        mhttp:request().
+set_request_auth(Request, #{authentication := {personal, User, Token}}, _) ->
   Header = mhttp_request:header(Request),
   Header2 = mhttp_header:add_basic_authorization(Header, User, Token),
   Request#{header => Header2};
-set_request_auth(Request, #{authentication := {oauth2, AccessToken}}) ->
+set_request_auth(Request, #{authentication := {oauth2, AccessToken}}, _) ->
   Header = mhttp_request:header(Request),
   Header2 = mhttp_header:add(Header, <<"Authorization">>,
                              <<"token ", AccessToken/binary>>),
   Request#{header => Header2};
-set_request_auth(Request, _Options) ->
+set_request_auth(Request, _, _) ->
   Request.
 
--spec set_request_if_none_match(mhttp:request(), options()) ->
+-spec set_request_if_none_match(mhttp:request(), github:options(),
+                                options()) ->
         mhttp:request().
-set_request_if_none_match(Request, #{if_none_match := Value}) ->
+set_request_if_none_match(Request, _, #{if_none_match := Value}) ->
   Header = mhttp_request:header(Request),
   Header2 = mhttp_header:add(Header, <<"If-None-Match">>, Value),
   Request#{header => Header2};
-set_request_if_none_match(Request, _) ->
+set_request_if_none_match(Request, _, _) ->
   Request.
 
--spec set_request_user_agent(mhttp:request(), options()) -> mhttp:request().
-set_request_user_agent(Request, Options) ->
+-spec set_request_user_agent(mhttp:request(), github:options(), options()) ->
+        mhttp:request().
+set_request_user_agent(Request, Options, _) ->
   Value = maps:get(user_agent, Options, <<"erl-github">>),
   Header = mhttp_request:header(Request),
   Request#{header => mhttp_header:add(Header, <<"User-Agent">>, Value)}.
 
--spec set_request_header(mhttp:request(), options()) -> mhttp:request().
-set_request_header(Request, _Options) ->
+-spec set_request_header(mhttp:request(), github:options(), options()) ->
+        mhttp:request().
+set_request_header(Request, _, _) ->
   DefaultHeader = [{<<"Content-Type">>, <<"application/json">>},
                    {<<"Accept">>, <<"application/json">>}],
   Header = lists:foldl(fun ({Name, Value}, H) ->
@@ -214,13 +221,14 @@ set_request_header(Request, _Options) ->
                        end, mhttp_request:header(Request), DefaultHeader),
   Request#{header => Header}.
 
--spec set_request_body(mhttp:request(), options()) -> mhttp:request().
-set_request_body(Request, #{request_body := Spec}) ->
+-spec set_request_body(mhttp:request(), github:options(), options()) ->
+        mhttp:request().
+set_request_body(Request, _, #{request_body := Spec}) ->
   Request#{body => encode_request_body(Spec)};
-set_request_body(Request, _Options) ->
+set_request_body(Request, _, _) ->
   Request.
 
--spec endpoint_uri(options()) -> uri:uri().
+-spec endpoint_uri(github:options()) -> uri:uri().
 endpoint_uri(#{endpoint := Endpoint}) when is_binary(Endpoint) ->
   case uri:parse(Endpoint) of
     {ok, URI} ->

@@ -1,7 +1,7 @@
 -module(github).
 
 -export_type([result/0, result/1, error_reason/0, request_error_reason/0,
-              authentication/0]).
+              options/0, authentication/0]).
 
 -type result() :: ok | {error, error_reason()}.
 -type result(Type) :: {ok, Type} | {error, error_reason()}.
@@ -17,6 +17,12 @@
         undefined
       | binary()
       | github_error:error().
+
+-type options() ::
+        #{mhttp_pool => mhttp:pool_id(),
+          endpoint => binary() | uri:uri(),
+          authentication => github:authentication(),
+          user_agent => binary()}.
 
 -type authentication() ::
         {personal, User :: binary(), Token :: binary()}

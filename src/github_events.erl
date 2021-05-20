@@ -1,7 +1,7 @@
 -module(github_events).
 
--export([list_public_events/1, list_organization_events/3,
-         list_repository_events/3,
+-export([list_public_events/2, list_organization_events/4,
+         list_repository_events/4,
          validate/1, generate/1]).
 
 -export_type([actor/0, event/0, event/1, repo/0,
@@ -43,46 +43,46 @@
           pages => all | pos_integer(),
           http_options => github_http:options()}.
 
--spec list_public_events(event_options()) ->
+-spec list_public_events(event_options(), github:options()) ->
         github:result(event_response() | not_modified).
-list_public_events(Options) ->
-  fetch_events(<<"/events">>, Options).
+list_public_events(EventOptions, Options) ->
+  fetch_events(<<"/events">>, EventOptions, Options).
 
 -spec list_organization_events(Username :: binary(), Name :: binary(),
-                               event_options()) ->
+                               event_options(), github:options()) ->
         github:result(event_response() | not_modified).
-list_organization_events(Username, Name, Options) ->
+list_organization_events(Username, Name, EventOptions, Options) ->
   UsernamePart = uri:encode_path(Username),
   NamePart = uri:encode_path(Name),
   Path =
     iolist_to_binary(["/users/", UsernamePart, "/events/orgs/", NamePart]),
-  fetch_events(Path, Options).
+  fetch_events(Path, EventOptions, Options).
 
 -spec list_repository_events(Owner :: binary(), Name :: binary(),
-                             event_options()) ->
+                             event_options(), github:options()) ->
         github:result(event_response() | not_modified).
-list_repository_events(Owner, Name, Options) ->
+list_repository_events(Owner, Name, EventOptions, Options) ->
   OwnerPart = uri:encode_path(Owner),
   NamePart = uri:encode_path(Name),
   Path = iolist_to_binary(["/repos/", OwnerPart, $/, NamePart, "/events"]),
-  fetch_events(Path, Options).
+  fetch_events(Path, EventOptions, Options).
 
--spec fetch_events(uri:path(), event_options()) ->
+-spec fetch_events(uri:path(), event_options(), github:options()) ->
         github:result(event_response() | not_modified).
-fetch_events(Path, EventOptions) ->
+fetch_events(Path, EventOptions, Options) ->
   URI = event_uri(Path, EventOptions),
   HTTPOptions0 = maps:get(http_options, EventOptions, #{}),
   HTTPOptions = maps:merge(HTTPOptions0,
                            #{response_body => {jsv, {ref, github, events}}}),
   Response = #{events => []},
-  fetch_events(URI, EventOptions, HTTPOptions, Response).
+  fetch_events(URI, EventOptions, HTTPOptions, Options, Response).
 
 -spec fetch_events(uri:uri(), event_options(), github_http:options(),
-                   event_response()) ->
+                   github:options(), event_response()) ->
         github:result(event_response() | not_modified).
-fetch_events(URI, EventOptions, HTTPOptions,
+fetch_events(URI, EventOptions, HTTPOptions, Options,
              Response = #{events := Events}) ->
-  case github_http:send_request(get, URI, HTTPOptions) of
+  case github_http:send_request(get, URI, Options, HTTPOptions) of
     {ok, {304, _, _}} ->
       {ok, not_modified};
     {ok, {_, Header, ResponseEvents}} ->
@@ -106,10 +106,12 @@ fetch_events(URI, EventOptions, HTTPOptions,
         {ok, NextURI} ->
           case maps:get(pages, EventOptions, 1) of
             all ->
-              fetch_events(NextURI, EventOptions, HTTPOptions2, Response2);
+              fetch_events(NextURI, EventOptions, HTTPOptions2, Options,
+                           Response2);
             N when is_integer(N), N > 1 ->
               EventOptions2 = EventOptions#{pages => N-1},
-              fetch_events(NextURI, EventOptions2, HTTPOptions2, Response2);
+              fetch_events(NextURI, EventOptions2, HTTPOptions2, Options,
+                           Response2);
             1 ->
               {ok, Response2}
           end;

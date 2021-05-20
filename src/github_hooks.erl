@@ -1,6 +1,6 @@
 -module(github_hooks).
 
--export([create_hook/3, delete_hook/3]).
+-export([create_hook/4, delete_hook/4]).
 
 -export_type([new_hook/0, new_hook_config/0,
               hook/0, hook_config/0, hook_response/0]).
@@ -50,16 +50,18 @@
           status => binary(),
           message => binary()}.
 
--spec create_hook(Owner :: binary(), Name :: binary(), new_hook()) ->
+-spec create_hook(Owner :: binary(), Name :: binary(), new_hook(),
+                  github:options()) ->
         github:result(hook()).
-create_hook(Owner, Name, NewHook) ->
+create_hook(Owner, Name, NewHook, Options) ->
   URI = #{path => uri_paths:join([<<"repos">>, Owner, Name, <<"hooks">>])},
-  github_http:create_resource(post, URI, NewHook, {ref, github, new_hook},
-                              {ref, github, hook}).
+  github_http:create_resource(post, URI, Options, NewHook,
+                              {ref, github, new_hook}, {ref, github, hook}).
 
--spec delete_hook(Owner :: binary(), Name :: binary(), Id :: integer()) ->
+-spec delete_hook(Owner :: binary(), Name :: binary(), Id :: integer(),
+                  github:options()) ->
         github:result().
-delete_hook(Owner, Name, Id) ->
+delete_hook(Owner, Name, Id, Options) ->
   URI = #{path => uri_paths:join([<<"repos">>, Owner, Name, <<"hooks">>,
                                   integer_to_binary(Id)])},
-  github_http:delete_resource(delete, URI).
+  github_http:delete_resource(delete, URI, Options).

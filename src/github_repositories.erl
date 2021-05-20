@@ -1,6 +1,6 @@
 -module(github_repositories).
 
--export([get_repository/2, list_org_repositories/1]).
+-export([get_repository/3, list_org_repositories/2]).
 
 -export_type([repository/0]).
 
@@ -21,14 +21,14 @@
           open_issues_count := integer(),
           subscribers_count => integer()}.
 
--spec get_repository(Owner :: binary(), Name :: binary()) ->
+-spec get_repository(Owner :: binary(), Name :: binary(), github:options()) ->
         github:result(repository()).
-get_repository(Owner, Name) ->
+get_repository(Owner, Name, Options) ->
   URI = #{path => uri_paths:join([<<"repos">>, Owner, Name])},
-  github_http:get_resource(get, URI, {ref, github, repository}).
+  github_http:get_resource(get, URI, Options, {ref, github, repository}).
 
--spec list_org_repositories(Org :: binary()) ->
+-spec list_org_repositories(Org :: binary(), github:options()) ->
         github:result([repository()]).
-list_org_repositories(Org) ->
+list_org_repositories(Org, Options) ->
   URI = #{path => uri_paths:join([<<"orgs">>, Org, <<"repos">>])},
-  github_http:get_resources(get, URI, {ref, github, repository}).
+  github_http:get_resources(get, URI, Options, {ref, github, repository}).
