@@ -40,7 +40,7 @@ get_resource(Method, URI, JSVDefinition) ->
       {ok, Value};
     {ok, {Status, _Header, _Value}} ->
       %% TODO error
-      {error, {request_error, Status, undefined}};
+      {error, {request_error, Status, undefined, URI}};
     {error, Reason} ->
       {error, Reason}
   end.
@@ -72,7 +72,7 @@ get_resources(Method, URI, Options, Acc) ->
       end;
     {ok, {Status, _Header, _Value}} ->
       %% TODO error
-      {error, {request_error, Status, undefined}};
+      {error, {request_error, Status, undefined, URI}};
     {error, Reason} ->
       {error, Reason}
   end.
@@ -89,7 +89,7 @@ create_resource(Method, URI, RequestData, RequestJSVDefinition,
       {ok, Value};
     {ok, {Status, _Header, _Value}} ->
       %% TODO error
-      {error, {request_error, Status, undefined}};
+      {error, {request_error, Status, undefined, URI}};
     {error, Reason} ->
       {error, Reason}
   end.
@@ -103,7 +103,7 @@ delete_resource(Method, URI) ->
       ok;
     {ok, {Status, _Header, _Value}} ->
       %% TODO error
-      {error, {request_error, Status, undefined}};
+      {error, {request_error, Status, undefined, URI}};
     {error, Reason} ->
       {error, Reason}
   end.
@@ -131,7 +131,7 @@ send_request(Method, URI, Options) ->
           {error, Reason}
       end;
     {ok, Response = #{status := Status}} ->
-      {error, {request_error, Status, request_error_reason(Response)}};
+      {error, {request_error, Status, request_error_reason(Response), URI}};
     {error, Reason} ->
       {error, {http_error, Reason, Request}}
   end.
