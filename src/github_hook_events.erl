@@ -1,12 +1,12 @@
 -module(github_hook_events).
 
 -export([request_event_type/1,
-         parse_type/1, parse_event/2, validate_event_request/2,
+         parse_event_type/1, parse_event/2, validate_event_request/2,
          jsv_definition/1]).
 
--export_type([type/0, event/0]).
+-export_type([event_type/0, event/0]).
 
--type type() ::
+-type event_type() ::
         check_run
       | check_suite
       | code_scanning_alert
@@ -63,117 +63,117 @@
 
 -type event() :: map().
 
--spec parse_type(binary()) -> {ok, type()} | error.
-parse_type(<<"check_run">>) ->
+-spec parse_event_type(binary()) -> {ok, event_type()} | error.
+parse_event_type(<<"check_run">>) ->
   {ok, check_run};
-parse_type(<<"check_suite">>) ->
+parse_event_type(<<"check_suite">>) ->
   {ok, check_suite};
-parse_type(<<"code_scanning_alert">>) ->
+parse_event_type(<<"code_scanning_alert">>) ->
   {ok, code_scanning_alert};
-parse_type(<<"commit_comment">>) ->
+parse_event_type(<<"commit_comment">>) ->
   {ok, commit_comment};
-parse_type(<<"content_reference">>) ->
+parse_event_type(<<"content_reference">>) ->
   {ok, content_reference};
-parse_type(<<"create">>) ->
+parse_event_type(<<"create">>) ->
   {ok, create};
-parse_type(<<"delete">>) ->
+parse_event_type(<<"delete">>) ->
   {ok, delete};
-parse_type(<<"deploy_key">>) ->
+parse_event_type(<<"deploy_key">>) ->
   {ok, deploy_key};
-parse_type(<<"deployment">>) ->
+parse_event_type(<<"deployment">>) ->
   {ok, deployment};
-parse_type(<<"deployment_status">>) ->
+parse_event_type(<<"deployment_status">>) ->
   {ok, deployment_status};
-parse_type(<<"discussion">>) ->
+parse_event_type(<<"discussion">>) ->
   {ok, discussion};
-parse_type(<<"discussion_comment">>) ->
+parse_event_type(<<"discussion_comment">>) ->
   {ok, discussion_comment};
-parse_type(<<"fork">>) ->
+parse_event_type(<<"fork">>) ->
   {ok, fork};
-parse_type(<<"github_app_authorization">>) ->
+parse_event_type(<<"github_app_authorization">>) ->
   {ok, github_app_authorization};
-parse_type(<<"gollum">>) ->
+parse_event_type(<<"gollum">>) ->
   {ok, gollum};
-parse_type(<<"installation">>) ->
+parse_event_type(<<"installation">>) ->
   {ok, installation};
-parse_type(<<"installation_repositories">>) ->
+parse_event_type(<<"installation_repositories">>) ->
   {ok, installation_repositories};
-parse_type(<<"issue_comment">>) ->
+parse_event_type(<<"issue_comment">>) ->
   {ok, issue_comment};
-parse_type(<<"issues">>) ->
+parse_event_type(<<"issues">>) ->
   {ok, issues};
-parse_type(<<"label">>) ->
+parse_event_type(<<"label">>) ->
   {ok, label};
-parse_type(<<"marketplace_purchase">>) ->
+parse_event_type(<<"marketplace_purchase">>) ->
   {ok, marketplace_purchase};
-parse_type(<<"member">>) ->
+parse_event_type(<<"member">>) ->
   {ok, member};
-parse_type(<<"membership">>) ->
+parse_event_type(<<"membership">>) ->
   {ok, membership};
-parse_type(<<"meta">>) ->
+parse_event_type(<<"meta">>) ->
   {ok, meta};
-parse_type(<<"milestone">>) ->
+parse_event_type(<<"milestone">>) ->
   {ok, milestone};
-parse_type(<<"organization">>) ->
+parse_event_type(<<"organization">>) ->
   {ok, organization};
-parse_type(<<"org_block">>) ->
+parse_event_type(<<"org_block">>) ->
   {ok, org_block};
-parse_type(<<"package">>) ->
+parse_event_type(<<"package">>) ->
   {ok, package};
-parse_type(<<"page_build">>) ->
+parse_event_type(<<"page_build">>) ->
   {ok, page_build};
-parse_type(<<"ping">>) ->
+parse_event_type(<<"ping">>) ->
   {ok, ping};
-parse_type(<<"project_card">>) ->
+parse_event_type(<<"project_card">>) ->
   {ok, project_card};
-parse_type(<<"project_column">>) ->
+parse_event_type(<<"project_column">>) ->
   {ok, project_column};
-parse_type(<<"project">>) ->
+parse_event_type(<<"project">>) ->
   {ok, project};
-parse_type(<<"public">>) ->
+parse_event_type(<<"public">>) ->
   {ok, public};
-parse_type(<<"pull_request">>) ->
+parse_event_type(<<"pull_request">>) ->
   {ok, pull_request};
-parse_type(<<"pull_request_review">>) ->
+parse_event_type(<<"pull_request_review">>) ->
   {ok, pull_request_review};
-parse_type(<<"pull_request_review_comment">>) ->
+parse_event_type(<<"pull_request_review_comment">>) ->
   {ok, pull_request_review_comment};
-parse_type(<<"push">>) ->
+parse_event_type(<<"push">>) ->
   {ok, push};
-parse_type(<<"release">>) ->
+parse_event_type(<<"release">>) ->
   {ok, release};
-parse_type(<<"repository_dispatch">>) ->
+parse_event_type(<<"repository_dispatch">>) ->
   {ok, repository_dispatch};
-parse_type(<<"repository">>) ->
+parse_event_type(<<"repository">>) ->
   {ok, repository};
-parse_type(<<"repository_import">>) ->
+parse_event_type(<<"repository_import">>) ->
   {ok, repository_import};
-parse_type(<<"repository_vulnerability_alert">>) ->
+parse_event_type(<<"repository_vulnerability_alert">>) ->
   {ok, repository_vulnerability_alert};
-parse_type(<<"secret_scanning_alert">>) ->
+parse_event_type(<<"secret_scanning_alert">>) ->
   {ok, secret_scanning_alert};
-parse_type(<<"security_advisory">>) ->
+parse_event_type(<<"security_advisory">>) ->
   {ok, security_advisory};
-parse_type(<<"sponsorship">>) ->
+parse_event_type(<<"sponsorship">>) ->
   {ok, sponsorship};
-parse_type(<<"star">>) ->
+parse_event_type(<<"star">>) ->
   {ok, star};
-parse_type(<<"status">>) ->
+parse_event_type(<<"status">>) ->
   {ok, status};
-parse_type(<<"team">>) ->
+parse_event_type(<<"team">>) ->
   {ok, team};
-parse_type(<<"team_add">>) ->
+parse_event_type(<<"team_add">>) ->
   {ok, team_add};
-parse_type(<<"watch">>) ->
+parse_event_type(<<"watch">>) ->
   {ok, watch};
-parse_type(<<"workflow_dispatch">>) ->
+parse_event_type(<<"workflow_dispatch">>) ->
   {ok, workflow_dispatch};
-parse_type(<<"workflow_run">>) ->
+parse_event_type(<<"workflow_run">>) ->
   {ok, workflow_run};
-parse_type(_) ->
+parse_event_type(_) ->
   error.
 
--spec request_event_type(mhttp:request()) -> github:result(type()).
+-spec request_event_type(mhttp:request()) -> github:result(event_type()).
 request_event_type(Request) ->
   Header = mhttp_request:header(Request),
   case mhttp_header:find(Header, <<"X-Github-Event">>) of
@@ -188,7 +188,7 @@ request_event_type(Request) ->
       {error, missing_hook_event_type}
   end.
 
--spec parse_event(binary(), type()) -> github:result(event()).
+-spec parse_event(binary(), event_type()) -> github:result(event()).
 parse_event(Data, Type) ->
   case json:parse(Data) of
     {ok, Value} ->
@@ -197,7 +197,7 @@ parse_event(Data, Type) ->
       {error, {invalid_hook_event, {json, Reason, Data}}}
   end.
 
--spec parse_event_value(json:value(), type()) -> github:result(event()).
+-spec parse_event_value(json:value(), event_type()) -> github:result(event()).
 parse_event_value(Value, Type) ->
   case jsv_definition(Type) of
     {ok, Definition} ->
@@ -234,7 +234,7 @@ validate_event_request(Request, Secret) ->
       {error, missing_hook_signature}
   end.
 
--spec jsv_definition(type()) -> {ok, jsv:definition()} | error.
+-spec jsv_definition(event_type()) -> {ok, jsv:definition()} | error.
 jsv_definition(repository) ->
   {ok, {ref, github, hook_event_repository}};
 jsv_definition(_) ->
