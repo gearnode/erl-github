@@ -146,7 +146,7 @@ request_error_reason(Response) ->
       case json:parse(Body) of
         {ok, Value} ->
           Definition = {ref, github, error},
-          Options = #{unknown_member_handling => remove,
+          Options = #{unknown_member_handling => keep,
                       null_member_handling => remove},
           case jsv:validate(Value, Definition, Options) of
             {ok, Term} ->
@@ -272,7 +272,7 @@ decode_response_body(Body, json) ->
 decode_response_body(Body, {jsv, Definition}) ->
   case decode_response_body(Body, json) of
     {ok, Value} ->
-      Options = #{unknown_member_handling => remove,
+      Options = #{unknown_member_handling => keep,
                   null_member_handling => remove,
                   format_value_errors => true},
       case jsv:validate(Value, Definition, Options) of
