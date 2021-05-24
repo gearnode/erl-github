@@ -21,7 +21,7 @@
         #{id := binary(),
           type := binary(),
           actor := actor(),
-          repo => repo(),
+          repo := repo(),
           org => actor(),
           payload := Payload,
           public := boolean(),

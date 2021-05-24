@@ -497,7 +497,7 @@ event_definition() ->
          public => boolean,
          created_at => datetime},
      required =>
-       [id, actor, payload, public]},
+       [id, actor, repo, payload, public]},
    #{validate => fun github_events:validate/1,
      generate => fun github_events:generate/1}}.
 
