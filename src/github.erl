@@ -12,9 +12,13 @@
       | {invalid_response_body, {json, json:error(), binary()}}
       | {invalid_response_body, {jsv, [jsv:value_error()], json:value()}}
       | {invalid_hypermedia_data, github_hypermedia:error_reason()}
+      | missing_hook_signature
+      | invalid_hook_signature
+      | missing_hook_event_type
+      | {invalid_hook_event_type, binary()}
       | {unsupported_hook_event_type, github_hook_events:type()}
-      | {invalid_hook_event_type, {json, json:error(), binary()}}
-      | {invalid_hook_event_type, {jsv, [jsv:value_error()], json:value()}}.
+      | {invalid_hook_event, {json, json:error(), binary()}}
+      | {invalid_hook_event, {jsv, [jsv:value_error()], json:value()}}.
 
 -type request_error_reason() ::
         undefined

@@ -1,6 +1,8 @@
 -module(github_hook_events).
 
--export([parse_type/1, parse_event/2, jsv_definition/1]).
+-export([request_event_type/1,
+         parse_type/1, parse_event/2, validate_event_request/2,
+         jsv_definition/1]).
 
 -export_type([type/0, event/0]).
 
@@ -171,6 +173,21 @@ parse_type(<<"workflow_run">>) ->
 parse_type(_) ->
   error.
 
+-spec request_event_type(mhttp:request()) -> github:result(type()).
+request_event_type(Request) ->
+  Header = mhttp_request:header(Request),
+  case mhttp_header:find(Header, <<"X-Github-Event">>) of
+    {ok, TypeString} ->
+      case parse_type(TypeString) of
+        {ok, Type} ->
+          {ok, Type};
+        error ->
+          {error, {invalid_hook_event_type, TypeString}}
+      end;
+    error ->
+      {error, missing_hook_event_type}
+  end.
+
 -spec parse_event(binary(), type()) -> github:result(event()).
 parse_event(Data, Type) ->
   case json:parse(Data) of
@@ -194,6 +211,25 @@ parse_event_value(Value, Type) ->
       end;
     error ->
       {error, {unsupported_hook_event_type, Type}}
+  end.
+
+-spec validate_event_request(mhttp:request(), binary()) -> github:result().
+validate_event_request(Request, Secret) ->
+  Header = mhttp_request:header(Request),
+  Body = mhttp_request:body(Request),
+  case mhttp_header:find(Header, <<"X-Hub-Signature-256">>) of
+    {ok, Signature} ->
+      ExpectedSignatureData = crypto:mac(hmac, sha256, Secret, Body),
+      ExpectedSignature =
+        string:lowercase(binary:encode_hex(ExpectedSignatureData)),
+      if
+        Signature =:= ExpectedSignature ->
+          ok;
+        true ->
+          {error, invalid_hook_signature}
+      end;
+    error ->
+      {error, missing_hook_signature}
   end.
 
 -spec jsv_definition(type()) -> {ok, jsv:definition()} | error.
