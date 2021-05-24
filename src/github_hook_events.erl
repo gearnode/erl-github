@@ -1,10 +1,40 @@
 -module(github_hook_events).
 
--export([request_event_type/1,
+-export([request_event/1,
          parse_event_type/1, parse_event/2, validate_event_request/2,
          jsv_definition/1]).
 
 -export_type([event_type/0, event/0]).
+
+-spec request_event(mhttp:request()) -> github:result({event_type(), event()}).
+request_event(Request) ->
+  case request_event_type(Request) of
+    {ok, Type} ->
+      Body = mhttp_request:body(Request),
+      case parse_event(Body, Type) of
+        {ok, Event} ->
+          {ok, {Type, Event}};
+        {error, Reason} ->
+          {error, Reason}
+      end;
+    {error, Reason} ->
+      {error, Reason}
+  end.
+
+-spec request_event_type(mhttp:request()) -> github:result(event_type()).
+request_event_type(Request) ->
+  Header = mhttp_request:header(Request),
+  case mhttp_header:find(Header, <<"X-Github-Event">>) of
+    {ok, TypeString} ->
+      case parse_event_type(TypeString) of
+        {ok, Type} ->
+          {ok, Type};
+        error ->
+          {error, {invalid_hook_event_type, TypeString}}
+      end;
+    error ->
+      {error, missing_hook_event_type}
+  end.
 
 -type event_type() ::
         check_run
@@ -172,21 +202,6 @@ parse_event_type(<<"workflow_run">>) ->
   {ok, workflow_run};
 parse_event_type(_) ->
   error.
-
--spec request_event_type(mhttp:request()) -> github:result(event_type()).
-request_event_type(Request) ->
-  Header = mhttp_request:header(Request),
-  case mhttp_header:find(Header, <<"X-Github-Event">>) of
-    {ok, TypeString} ->
-      case parse_type(TypeString) of
-        {ok, Type} ->
-          {ok, Type};
-        error ->
-          {error, {invalid_hook_event_type, TypeString}}
-      end;
-    error ->
-      {error, missing_hook_event_type}
-  end.
 
 -spec parse_event(binary(), event_type()) -> github:result(event()).
 parse_event(Data, Type) ->
