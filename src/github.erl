@@ -13,6 +13,7 @@
       | {invalid_response_body, {jsv, [jsv:value_error()], json:value()}}
       | {invalid_hypermedia_data, github_hypermedia:error_reason()}
       | missing_hook_signature
+      | {invalid_hook_signature_format, binary()}
       | invalid_hook_signature
       | missing_hook_event_type
       | {invalid_hook_event_type, binary()}

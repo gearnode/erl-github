@@ -218,7 +218,7 @@ validate_event_request(Request, Secret) ->
   Header = mhttp_request:header(Request),
   Body = mhttp_request:body(Request),
   case mhttp_header:find(Header, <<"X-Hub-Signature-256">>) of
-    {ok, Signature} ->
+    {ok, <<"sha256=", Signature/binary>>} ->
       ExpectedSignatureData = crypto:mac(hmac, sha256, Secret, Body),
       ExpectedSignature =
         string:lowercase(binary:encode_hex(ExpectedSignatureData)),
@@ -228,6 +228,8 @@ validate_event_request(Request, Secret) ->
         true ->
           {error, invalid_hook_signature}
       end;
+    {ok, Signature} ->
+      {error, {invalid_hook_signature_format, Signature}};
     error ->
       {error, missing_hook_signature}
   end.
