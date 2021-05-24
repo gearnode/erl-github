@@ -15,6 +15,9 @@ catalog() ->
     author_association => author_association_definition(),
     reaction_rollup => reaction_rollup_definition(),
     simple_user => simple_user_definition(),
+    simple_organization => simple_organization_definition(),
+    organization => organization_definition(),
+    organization_plan => organization_plan_definition(),
     repository => repository_definition(),
     commit => commit_definition(),
     commit_author => commit_author_definition(),
@@ -56,7 +59,8 @@ catalog() ->
     new_org_hook_config => new_org_hook_config_definition(),
     org_hook => org_hook_definition(),
     org_hooks => {array, #{element => {ref, org_hook}}},
-    org_hook_config => org_hook_config_definition()}.
+    org_hook_config => org_hook_config_definition(),
+    hook_event_repository => hook_event_repository_definition()}.
 
 -spec error_definition() -> jsv:definition().
 error_definition() ->
@@ -154,6 +158,94 @@ simple_user_definition() ->
         html_url, id, node_id, login, organizations_url,
         received_events_url, repos_url, site_admin, starred_url,
         subscriptions_url, type, url]}}.
+
+-spec simple_organization_definition() -> jsv:definition().
+simple_organization_definition() ->
+  {object,
+   #{members =>
+       #{login => string,
+         id => integer,
+         node_id => string,
+         url => string,
+         repos_url => string,
+         events_url => string,
+         hooks_url => string,
+         issues_url => string,
+         members_url => string,
+         public_members_url => string,
+         avatar_url => string,
+         description => string},
+     required =>
+       [login, id, node_id]}}.
+
+-spec organization_definition() -> jsv:definition().
+organization_definition() ->
+  {object,
+   #{members =>
+       #{login => string,
+         id => integer,
+         node_id => string,
+         url => string,
+         repos_url => string,
+         events_url => string,
+         hooks_url => string,
+         issues_url => string,
+         members_url => string,
+         public_members_url => string,
+         avatar_url => string,
+         description => string,
+         name => string,
+         company => string,
+         blog => string,
+         location => string,
+         email => string,
+         twitter_username => string,
+         is_verified => boolean,
+         has_organization_projects => boolean,
+         has_repository_projects => boolean,
+         public_repos => integer,
+         public_gists => integer,
+         followers => integer,
+         following => integer,
+         html_url => string,
+         created_at => datetime,
+         type => string,
+         total_private_repos => integer,
+         owned_private_repos => integer,
+         private_gists => integer,
+         disk_usage => integer,
+         collaborators => integer,
+         billing_email => string,
+         plan => {ref, organization_plan},
+         default_repository_permission => string,
+         members_can_create_repositories => boolean,
+         two_factor_requirement_enabled => boolean,
+         members_allowed_repository_creation_type => string,
+         members_can_create_public_repositories => boolean,
+         members_can_create_private_repositories => boolean,
+         members_can_create_internal_repositories => boolean,
+         members_can_create_pages => boolean,
+         members_can_create_public_pages => boolean,
+         members_can_create_private_pages => boolean,
+         updated_at => datetime},
+     required =>
+       [login, url, id, node_id, repos_url, events_url, hooks_url,
+        issues_url, members_url, public_members_url, avatar_url,
+        html_url, has_organization_projects, has_repository_projects,
+        public_repos, public_gists, followers, following, type,
+        created_at, updated_at]}}.
+
+-spec organization_plan_definition() -> jsv:definition().
+organization_plan_definition() ->
+  {object,
+   #{members =>
+       #{name => string,
+         space => integer,
+         private_repos => integer,
+         filled_seats => integer,
+         seats => integer},
+    required =>
+       [name, space, private_repos]}}.
 
 -spec repository_definition() -> jsv:definition().
 repository_definition() ->
@@ -819,3 +911,27 @@ org_hook_config_definition() ->
          secret => string},
      required =>
        []}}.
+
+-spec hook_event(jsv:definition()) -> jsv:definition().
+hook_event({object, Constraints = #{members := Members}}) ->
+  Required = maps:get(required, Constraints, []),
+  {object,
+   Constraints#{members =>
+                  maps:merge(#{action => string,
+                               sender => {ref, simple_user},
+                               repository => {ref, repository},
+                               organization => {ref, simple_organization},
+                               installation => object}, % TODO
+                             Members),
+                required =>
+                  [sender] ++ Required}}.
+
+-spec hook_event_repository_definition() -> jsv:definition().
+hook_event_repository_definition() ->
+  hook_event({object,
+              #{members =>
+                  #{action =>
+                      {string,
+                       #{values => [created, deleted, archived, unarchived,
+                                    edited, renamed, transferred, publicized,
+                                    privatized]}}}}}).

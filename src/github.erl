@@ -11,7 +11,10 @@
       | {request_error, mhttp:status(), request_error_reason()}
       | {invalid_response_body, {json, json:error(), binary()}}
       | {invalid_response_body, {jsv, [jsv:value_error()], json:value()}}
-      | {invalid_hypermedia_data, github_hypermedia:error_reason()}.
+      | {invalid_hypermedia_data, github_hypermedia:error_reason()}
+      | {unsupported_hook_event_type, github_hook_events:type()}
+      | {invalid_hook_event_type, {json, json:error(), binary()}}
+      | {invalid_hook_event_type, {jsv, [jsv:value_error()], json:value()}}.
 
 -type request_error_reason() ::
         undefined
