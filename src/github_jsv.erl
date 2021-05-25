@@ -936,7 +936,17 @@ hook_event_repository_definition() ->
                       {string,
                        #{values => [created, deleted, archived, unarchived,
                                     edited, renamed, transferred,
-                                    publicized]}}}}}).
+                                    publicized]}},
+                    changes =>
+                      {object,
+                       #{members =>
+                           #{repository =>
+                               {object,
+                                #{members =>
+                                    #{name =>
+                                        {object,
+                                         #{members =>
+                                             #{from => string}}}}}}}}}}}}).
 
 -spec hook_event_create_definition() -> jsv:definition().
 hook_event_create_definition() ->
