@@ -1,10 +1,19 @@
 -module(github_jsv).
 
--export([catalog/0]).
+-export([type_map/0, catalog/0]).
 
 %% We do *NOT* use the JSV URI type because GitHub will regularly include
 %% empty strings in fields which are supposed to be URIs. Nothing we can do
 %% about it.
+
+%% We also introduce a new datetime type because GitHub will something use
+%% UNIX timestamps for datetimes instead of RFC3339 datetime strings. Do not
+%% even ask.
+
+-spec type_map() -> jsv:type_map().
+type_map() ->
+  maps:merge(jsv:default_type_map(),
+             #{datetime => github_jsv_datetime}).
 
 -spec catalog() -> jsv:catalog().
 catalog() ->

@@ -167,7 +167,8 @@ set_response_etag(Response, Header) ->
 validate(Event = #{type := Type, payload := Payload}) ->
   case payload_definition(Type) of
     {ok, Definition} ->
-      Options = #{unknown_member_handling => keep,
+      Options = #{type_map => github_jsv:type_map(),
+                  unknown_member_handling => keep,
                   null_member_handling => remove},
       case jsv:validate(Payload, Definition, Options) of
         {ok, Payload2} ->

@@ -226,7 +226,8 @@ parse_event(Data, Type) ->
 parse_event_value(Value, Type) ->
   case jsv_definition(Type) of
     {ok, Definition} ->
-      Options = #{unknown_member_handling => keep,
+      Options = #{type_map => github_jsv:type_map(),
+                  unknown_member_handling => keep,
                   null_member_handling => remove},
       case jsv:validate(Value, Definition, Options) of
         {ok, Event} ->
