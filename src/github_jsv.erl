@@ -269,7 +269,7 @@ repository_definition() ->
          name => string,
          full_name => string,
          license => any, % TODO
-         organization => {ref, simple_user},
+         organization => {one_of, [{ref, organization}, string]},
          forks => integer,
          permissions =>
            {object, #{}}, % TODO
