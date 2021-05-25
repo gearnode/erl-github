@@ -988,8 +988,7 @@ hook_event_push_definition() ->
                       {object,
                        #{members =>
                            #{name => string,
-                             email => string}}},
-                    pusher => {ref, simple_user}},
+                             email => string}}}},
                required =>
                   []}}).
 
