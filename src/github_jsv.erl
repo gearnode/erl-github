@@ -984,6 +984,11 @@ hook_event_push_definition() ->
                     'after' => string,
                     commits =>
                       {array, #{element => {ref, hook_event_push_commit}}},
+                    pusher =>
+                      {object,
+                       #{members =>
+                           #{name => string,
+                             email => string}}},
                     pusher => {ref, simple_user}},
                required =>
                   []}}).
