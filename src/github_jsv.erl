@@ -60,7 +60,9 @@ catalog() ->
     org_hook => org_hook_definition(),
     org_hooks => {array, #{element => {ref, org_hook}}},
     org_hook_config => org_hook_config_definition(),
-    hook_event_repository => hook_event_repository_definition()}.
+    hook_event_repository => hook_event_repository_definition(),
+    hook_event_create => hook_event_create_definition(),
+    hook_event_delete => hook_event_delete_definition()}.
 
 -spec error_definition() -> jsv:definition().
 error_definition() ->
@@ -933,5 +935,29 @@ hook_event_repository_definition() ->
                   #{action =>
                       {string,
                        #{values => [created, deleted, archived, unarchived,
-                                    edited, renamed, transferred, publicized,
-                                    privatized]}}}}}).
+                                    edited, renamed, transferred,
+                                    publicized]}}}}}).
+
+-spec hook_event_create_definition() -> jsv:definition().
+hook_event_create_definition() ->
+  hook_event({object,
+              #{members =>
+                  #{ref => string,
+                    ref_type => {string, #{values => [branch, tag]}},
+                    master_branch => string,
+                    description => string,
+                    pusher_type => string},
+               required =>
+                  []}}).
+
+-spec hook_event_delete_definition() -> jsv:definition().
+hook_event_delete_definition() ->
+  hook_event({object,
+              #{members =>
+                  #{ref => string,
+                    ref_type => {string, #{values => [branch, tag]}},
+                    master_branch => string,
+                    description => string,
+                    pusher_type => string},
+               required =>
+                  []}}).

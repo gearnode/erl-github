@@ -252,5 +252,9 @@ validate_event_request(Request, Secret) ->
 -spec jsv_definition(event_type()) -> {ok, jsv:definition()} | error.
 jsv_definition(repository) ->
   {ok, {ref, github, hook_event_repository}};
+jsv_definition(create) ->
+  {ok, {ref, github, hook_event_create}};
+jsv_definition(delete) ->
+  {ok, {ref, github, hook_event_delete}};
 jsv_definition(_) ->
   error.
