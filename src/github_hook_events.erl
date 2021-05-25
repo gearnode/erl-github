@@ -1,6 +1,6 @@
 -module(github_hook_events).
 
--export([request_event/1,
+-export([request_event/1, request_delivery_id/1,
          parse_event_type/1, parse_event/2, validate_event_request/2,
          jsv_definition/1]).
 
@@ -19,6 +19,16 @@ request_event(Request) ->
       end;
     {error, Reason} ->
       {error, Reason}
+  end.
+
+-spec request_delivery_id(mhttp:request()) -> github:result(binary()).
+request_delivery_id(Request) ->
+  Header = mhttp_request:header(Request),
+  case mhttp_header:find(Header, <<"X-GitHub-Delivery">>) of
+    {ok, Id} ->
+      {ok, Id};
+    error ->
+      {error, missing_hook_delivery_id}
   end.
 
 -spec request_event_type(mhttp:request()) -> github:result(event_type()).

@@ -18,6 +18,7 @@
       | missing_hook_event_type
       | {invalid_hook_event_type, binary()}
       | {unsupported_hook_event_type, github_hook_events:event_type()}
+      | missing_hook_delivery_id
       | {invalid_hook_event, {json, json:error(), binary()}}
       | {invalid_hook_event, {jsv, [jsv:value_error()], json:value()}}.
 
