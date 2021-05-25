@@ -62,7 +62,9 @@ catalog() ->
     org_hook_config => org_hook_config_definition(),
     hook_event_repository => hook_event_repository_definition(),
     hook_event_create => hook_event_create_definition(),
-    hook_event_delete => hook_event_delete_definition()}.
+    hook_event_delete => hook_event_delete_definition(),
+    hook_event_push => hook_event_push_definition(),
+    hook_event_push_commit => hook_event_push_commit_definition()}.
 
 -spec error_definition() -> jsv:definition().
 error_definition() ->
@@ -946,7 +948,8 @@ hook_event_repository_definition() ->
                                     #{name =>
                                         {object,
                                          #{members =>
-                                             #{from => string}}}}}}}}}}}}).
+                                             #{from => string}}}}}}}}}},
+                required => []}}).
 
 -spec hook_event_create_definition() -> jsv:definition().
 hook_event_create_definition() ->
@@ -971,3 +974,38 @@ hook_event_delete_definition() ->
                     pusher_type => string},
                required =>
                   []}}).
+
+-spec hook_event_push_definition() -> jsv:definition().
+hook_event_push_definition() ->
+  hook_event({object,
+              #{members =>
+                  #{ref => string,
+                    before => string,
+                    'after' => string,
+                    commits =>
+                      {array, #{element => {ref, hook_event_push_commit}}},
+                    pusher => {ref, simple_user}},
+               required =>
+                  []}}).
+
+-spec hook_event_push_commit_definition() -> jsv:definition().
+hook_event_push_commit_definition() ->
+  %% The GitHub webhook documentation does not document the format of the
+  %% added, modified and removed members, and their example does not include
+  %% any commit. So for the time being, we are not defining anything.
+  {object,
+   #{members =>
+       #{id => string,
+         timestamp => string,
+         message => string,
+         author =>
+           {object,
+            #{members =>
+                #{name => string,
+                  email => string}}},
+         url => string,
+         distinct => boolean,
+         added => array,
+         modified => array,
+         removed => array},
+     required => []}}.

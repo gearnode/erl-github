@@ -266,5 +266,7 @@ jsv_definition(create) ->
   {ok, {ref, github, hook_event_create}};
 jsv_definition(delete) ->
   {ok, {ref, github, hook_event_delete}};
+jsv_definition(push) ->
+  {ok, {ref, github, hook_event_push}};
 jsv_definition(_) ->
   error.
