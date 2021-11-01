@@ -997,7 +997,10 @@ hook_event_push_definition() ->
                       {object,
                        #{members =>
                            #{name => string,
-                             email => string}}}},
+                             email => string}}},
+                    created => boolean,
+                    deleted => boolean,
+                    forced => boolean},
                required =>
                   []}}).
 
