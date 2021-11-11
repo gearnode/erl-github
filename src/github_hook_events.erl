@@ -99,6 +99,7 @@ request_event_type(Request) ->
       | team_add
       | watch
       | workflow_dispatch
+      | workflow_job
       | workflow_run.
 
 -type event() :: map().
@@ -208,6 +209,8 @@ parse_event_type(<<"watch">>) ->
   {ok, watch};
 parse_event_type(<<"workflow_dispatch">>) ->
   {ok, workflow_dispatch};
+parse_event_type(<<"workflow_job">>) ->
+  {ok, workflow_job};
 parse_event_type(<<"workflow_run">>) ->
   {ok, workflow_run};
 parse_event_type(_) ->
