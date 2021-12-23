@@ -20,7 +20,6 @@
   {applications,
    [kernel,
     stdlib,
-    et,
     uri,
     mhttp,
     json,
